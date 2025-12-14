@@ -1,3 +1,9 @@
 black
 flake8
 pytest
+pandas
+numpy
+seaborn
+matplotlib
+scikit-learn
+scipy
