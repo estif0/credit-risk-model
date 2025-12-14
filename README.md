@@ -1,5 +1,255 @@
 # Credit Risk Model
 
+## Project Overview
+
+End-to-end credit risk modeling project for Bati Bank's buy-now-pay-later service, implementing a Credit Scoring Model using RFM-based behavioral analytics. This project addresses the cold-start problem of credit risk assessment without historical default data by creating proxy targets from customer transaction patterns.
+
+**Key Features:**
+- Modular, production-ready codebase with comprehensive error handling
+- RFM analysis for proxy target variable creation
+- Multiple ML model implementations with MLflow tracking
+- Docker containerization for reproducible deployments
+- CI/CD pipeline with automated testing and quality checks
+- Basel II-compliant documentation and model interpretability
+
+---
+
+## Project Structure
+
+```
+credit-risk-model/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # CI/CD pipeline configuration
+├── data/
+│   ├── raw/                       # Original transaction data (gitignored)
+│   │   ├── data.csv
+│   │   └── Xente_Variable_Definitions.csv
+│   └── processed/                 # Engineered features (gitignored)
+├── docs/                          # Project documentation (gitignored)
+├── notebooks/
+│   ├── __init__.py
+│   ├── eda.ipynb                  # Exploratory Data Analysis
+│   ├── generate_figures.py       # EDA visualization generator
+│   └── figures/                   # EDA visualizations
+├── src/
+│   ├── __init__.py
+│   ├── data_processing.py         # Feature engineering module
+│   ├── rfm_analysis.py            # RFM analysis and clustering
+│   ├── utils.py                   # Utility functions
+│   └── api/
+│       ├── __init__.py
+│       └── (future FastAPI implementation)
+├── tests/
+│   ├── __init__.py
+│   ├── test_data_processing.py   # Unit tests for data processing
+│   ├── test_rfm_analysis.py      # Unit tests for RFM analysis
+│   └── test_utils.py              # Unit tests for utilities
+├── reports/
+│   ├── INTERIM_REPORT.md          # Interim project report
+│   └── figures/                   # Report visualizations
+├── .gitignore
+├── requirements.txt
+├── Dockerfile                     # Docker container configuration
+├── docker-compose.yml             # Multi-service orchestration
+├── LICENCE
+└── README.md                      # This file
+```
+
+---
+
+## Installation and Setup
+
+### Prerequisites
+- Python 3.10+
+- Docker (optional, for containerized deployment)
+- Git
+
+### Local Installation
+
+1. **Clone the repository:**
+```bash
+git clone <repository-url>
+cd credit-risk-model
+```
+
+2. **Create virtual environment:**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Download data:**
+   - Place `data.csv` in `data/raw/` directory
+   - Ensure `data/` is gitignored (already configured)
+
+### Docker Installation
+
+1. **Build Docker image:**
+```bash
+docker build -t credit-risk-model:latest .
+```
+
+2. **Run with Docker Compose:**
+```bash
+docker-compose up
+```
+
+This will start:
+- Data processing service
+- RFM analysis service
+- Jupyter notebook (port 8888)
+- MLflow tracking server (port 5000)
+
+---
+
+## Usage
+
+### 1. Data Processing and Feature Engineering
+
+```python
+from src.data_processing import DataProcessor, apply_log_transformation
+
+# Initialize processor
+processor = DataProcessor(scale_features=True, encoding_strategy='label')
+
+# Load data
+df = processor.load_data('data/raw/data.csv')
+
+# Extract temporal features
+df = processor.extract_temporal_features(df)
+
+# Create aggregate features per customer
+agg_df = processor.create_aggregate_features(df, group_by='CustomerId')
+
+# Apply log transformation to skewed features
+df = apply_log_transformation(df, ['Amount', 'Value'])
+
+# Save processed data
+from src.data_processing import save_processed_data
+save_processed_data(df, 'data/processed/processed_transactions.csv')
+```
+
+### 2. RFM Analysis and Proxy Target Creation
+
+```python
+from src.rfm_analysis import run_rfm_pipeline
+
+# Run complete RFM pipeline
+rfm_results, analyzer = run_rfm_pipeline(
+    transaction_df=df,
+    customer_col='CustomerId',
+    date_col='TransactionStartTime',
+    value_col='Value',
+    n_clusters=3,
+    save_results=True,
+    output_path='data/processed/rfm_features.csv'
+)
+
+# Visualize clusters
+analyzer.visualize_clusters(
+    rfm_results,
+    save_path='notebooks/figures/rfm_clusters.png'
+)
+
+# Get cluster summary
+summary = analyzer.get_cluster_summary()
+print(summary)
+```
+
+### 3. Running Tests
+
+```bash
+# Run all tests with coverage
+pytest tests/ --cov=src --cov-report=html --cov-report=term
+
+# Run specific test file
+pytest tests/test_data_processing.py -v
+
+# Run with detailed output
+pytest tests/ -vv
+```
+
+### 4. Using Docker Compose Services
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f data-processor
+
+# Run data processing
+docker-compose run data-processor python -m src.data_processing
+
+# Run RFM analysis
+docker-compose run rfm-analyzer python -m src.rfm_analysis
+
+# Access Jupyter notebook
+# Open browser to http://localhost:8888
+
+# Access MLflow UI
+# Open browser to http://localhost:5000
+
+# Stop all services
+docker-compose down
+```
+
+---
+
+## Module Documentation
+
+### src/data_processing.py
+
+**DataProcessor Class:**
+- `load_data(filepath)`: Load CSV with error handling
+- `extract_temporal_features(df)`: Extract hour, day, month, year, time periods
+- `create_aggregate_features(df, group_by)`: Create customer-level aggregates
+- `handle_missing_values(df, strategy)`: Imputation strategies
+- `encode_categorical_features(df, cols)`: Label/one-hot encoding
+- `scale_numerical_features(df, cols)`: StandardScaler transformation
+
+**Functions:**
+- `apply_log_transformation(df, columns)`: Log transform for skewed features
+- `save_processed_data(df, filepath)`: Save with error handling
+
+### src/rfm_analysis.py
+
+**RFMAnalyzer Class:**
+- `calculate_rfm_metrics(df)`: Calculate Recency, Frequency, Monetary
+- `perform_clustering(rfm_df)`: K-Means clustering on scaled RFM
+- `assign_proxy_target(rfm_df)`: Create binary is_high_risk variable
+- `visualize_clusters(rfm_df)`: Generate cluster visualizations
+- `get_cluster_summary()`: Return cluster profiles and statistics
+
+**Functions:**
+- `run_rfm_pipeline(df)`: Execute complete RFM workflow
+
+### src/utils.py
+
+**Validation Functions:**
+- `validate_dataframe(df, required_columns)`: Check structure
+- `check_null_values(df, threshold)`: Null value reporting
+- `detect_outliers_iqr(series)`: IQR-based outlier detection
+
+**Calculation Functions:**
+- `calculate_skewness(df, columns)`: Distribution analysis
+- `safe_divide(num, denom, default)`: Zero-safe division
+- `calculate_class_weights(y)`: Imbalanced data weights
+- `calculate_woe_iv(df, feature, target)`: Weight of Evidence
+
+**I/O Functions:**
+- `load_config(path)`: Load JSON configuration
+- `save_config(config, path)`: Save JSON configuration
+- `ensure_directory_exists(filepath)`: Create directories
+
+---
+
 ## Credit Scoring Business Understanding
 
 ### Basel II and Model Interpretability

@@ -1,3 +1,6 @@
 {
-	"conventionalCommits.scopes": ["notebook"]
+	"conventionalCommits.scopes": ["notebook"],
+	"python.testing.pytestArgs": ["tests"],
+	"python.testing.unittestEnabled": false,
+	"python.testing.pytestEnabled": true
 }
