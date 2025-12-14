@@ -66,20 +66,8 @@ jobs:
 
             - name: Run tests with coverage
               run: |
-                  pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing --cov-report=html
+                  pytest tests/
               continue-on-error: true
-
-            - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v3
-              with:
-                  files: ./coverage.xml
-                  fail_ci_if_error: false
-
-            - name: Upload coverage report
-              uses: actions/upload-artifact@v3
-              with:
-                  name: coverage-report
-                  path: htmlcov/
 
     # Build Docker image
     build:
@@ -121,11 +109,11 @@ jobs:
 
             - name: Run bandit security scan
               run: |
-                  bandit -r src/ -ll --exit-zero
+                  bandit -r src/ -ll --exit-code
 
             - name: Check dependencies for vulnerabilities
               run: |
-                  safety check --exit-zero
+                  safety check --exit-code
 
     # Notify on completion
     notify:
