@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+    # Data processing service
+    data-processor:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-data-processor
+        volumes:
+            - ./data:/app/data
+            - ./mlruns:/app/mlruns
+            - ./notebooks:/app/notebooks
+            - ./reports:/app/reports
+        environment:
+            - PYTHONPATH=/app
+        command: python -m src.data_processing
+        networks:
+            - credit-risk-network
+
+    # RFM analysis service
+    rfm-analyzer:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-rfm-analyzer
+        volumes:
+            - ./data:/app/data
+            - ./mlruns:/app/mlruns
+            - ./notebooks:/app/notebooks
+        environment:
+            - PYTHONPATH=/app
+        command: python -m src.rfm_analysis
+        depends_on:
+            - data-processor
+        networks:
+            - credit-risk-network
+
+    # Jupyter notebook service (for development)
+    notebook:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-notebook
+        ports:
+            - "8888:8888"
+        volumes:
+            - ./:/app
+        environment:
+            - PYTHONPATH=/app
+        command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+        networks:
+            - credit-risk-network
+
+    # MLflow tracking server (for experiment tracking)
+    mlflow:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-mlflow
+        ports:
+            - "5000:5000"
+        volumes:
+            - ./mlruns:/app/mlruns
+        environment:
+            - PYTHONPATH=/app
+        command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:///app/mlruns --default-artifact-root file:///app/mlruns
+        networks:
+            - credit-risk-network
+
+    # API service (placeholder for future FastAPI deployment)
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-api
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./data:/app/data
+            - ./mlruns:/app/mlruns
+            - ./src:/app/src
+        environment:
+            - PYTHONPATH=/app
+            - MLFLOW_TRACKING_URI=http://mlflow:5000
+        command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+        depends_on:
+            - mlflow
+        networks:
+            - credit-risk-network
+
+networks:
+    credit-risk-network:
+        driver: bridge
+
+volumes:
+    mlruns:
+    data:
