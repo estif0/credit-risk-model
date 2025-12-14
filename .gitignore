@@ -214,3 +214,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Other files and directories to ignore
+data/
+docs/
+logs/
