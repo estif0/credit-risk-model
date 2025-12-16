@@ -220,3 +220,5 @@ __marimo__/
 data/
 docs/
 logs/
+mlruns/
+test_mlruns/
