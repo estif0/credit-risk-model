@@ -10,8 +10,6 @@ import numpy as np
 from datetime import datetime, timedelta
 from src.data_processing import (
     DataProcessor,
-    apply_log_transformation,
-    save_processed_data,
 )
 
 
@@ -120,7 +118,8 @@ def test_apply_log_transformation():
     """Test log transformation on skewed features."""
     df = pd.DataFrame({"Amount": [100, 1000, 10000], "Value": [50, 500, 5000]})
 
-    result = apply_log_transformation(df, ["Amount", "Value"])
+    processor = DataProcessor()
+    result = processor.apply_log_transformation(df, ["Amount", "Value"])
 
     # Check log columns were created
     assert "Amount_log" in result.columns
@@ -158,7 +157,8 @@ def test_encode_categorical_features(sample_transaction_data):
 def test_save_processed_data_creates_file(sample_transaction_data, tmp_path):
     """Test that save_processed_data creates a file."""
     output_file = tmp_path / "test_output.csv"
-    save_processed_data(sample_transaction_data, str(output_file))
+    processor = DataProcessor()
+    processor.save_processed_data(sample_transaction_data, str(output_file))
 
     assert output_file.exists()
 
