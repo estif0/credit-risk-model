@@ -32,5 +32,5 @@ RUN mkdir -p data/raw data/processed mlruns notebooks/figures reports/figures
 # Expose port for API (if running FastAPI)
 EXPOSE 8000
 
-# Default command (can be overridden)
-CMD ["python", "-m", "src.data_processing"]
+# Default command - run FastAPI application
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
