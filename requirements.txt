@@ -7,3 +7,7 @@ seaborn
 matplotlib
 scikit-learn
 scipy
+mlflow
+xgboost
+lightgbm
+pytest-mock
