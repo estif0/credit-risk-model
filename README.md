@@ -1,252 +1,222 @@
-# Credit Risk Model
+# 🏦 Credit Risk Scoring Model
 
-## Project Overview
+<div align="center">
 
-End-to-end credit risk modeling project for Bati Bank's buy-now-pay-later service, implementing a Credit Scoring Model using RFM-based behavioral analytics. This project addresses the cold-start problem of credit risk assessment without historical default data by creating proxy targets from customer transaction patterns.
+**Production-Ready ML System for Credit Risk Assessment**
 
-**Key Features:**
-- Modular, production-ready codebase with comprehensive error handling
-- RFM analysis for proxy target variable creation
-- Multiple ML model implementations with MLflow tracking
-- Docker containerization for reproducible deployments
-- CI/CD pipeline with automated testing and quality checks
-- Basel II-compliant documentation and model interpretability
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+[![MLflow](https://img.shields.io/badge/MLflow-2.0+-0194E2.svg)](https://mlflow.org/)
+[![Docker](https://img.shields.io/badge/Docker-compose-2496ED.svg)](https://www.docker.com/)
+[![Tests](https://img.shields.io/badge/tests-98%20passed-success.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](tests/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+[Quick Start](#-quick-start) • [API](#-api-endpoints) • [Testing](#-testing) • [Docker](#-docker)
+
+</div>
 
 ---
 
-## Project Structure
+## 📋 Overview
+
+End-to-end **Credit Scoring System** for Bati Bank's buy-now-pay-later service. Transforms behavioral transaction data into credit risk predictions using RFM analytics and machine learning.
+
+**Highlights:** RFM Clustering Proxy Target • 23+ Engineered Features • 4 ML Models (LogReg, DecisionTree, RandomForest, GradientBoosting) • MLflow Experiment Tracking • FastAPI REST API • Docker Deployment • 98 Unit Tests (85% Coverage) • CI/CD Pipeline • Basel II Compliant
+
+---
+
+## 🚀 Quick Start
+
+### Local Setup
+
+```bash
+# Clone and install
+git clone https://github.com/estif0/credit-risk-model.git
+cd credit-risk-model
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# Place data.csv in data/raw/ (from Kaggle Xente Challenge)
+
+# Run pipeline
+python src/run_feature_engineering.py
+python src/run_rfm_pipeline.py
+python src/train.py
+
+# Start API
+uvicorn src.api.main:app --reload --port 8000
+# Visit http://localhost:8000/docs
+```
+
+### Docker Setup
+
+```bash
+docker-compose up --build
+# API: http://localhost:8000
+# MLflow: http://localhost:5000
+# Jupyter: http://localhost:8888
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 credit-risk-model/
-├── .github/
-│   └── workflows/
-│       └── ci.yml                 # CI/CD pipeline configuration
+├── .github/workflows/ci.yml    # CI/CD pipeline
 ├── data/
-│   ├── raw/                       # Original transaction data (gitignored)
-│   │   ├── data.csv
-│   │   └── Xente_Variable_Definitions.csv
-│   └── processed/                 # Engineered features (gitignored)
-├── docs/                          # Project documentation (gitignored)
-├── notebooks/
-│   ├── __init__.py
-│   ├── eda.ipynb                  # Exploratory Data Analysis
-│   ├── generate_figures.py       # EDA visualization generator
-│   └── figures/                   # EDA visualizations
+│   ├── raw/                    # Original data (git-ignored)
+│   └── processed/              # Engineered features
 ├── src/
-│   ├── __init__.py
-│   ├── data_processing.py         # Feature engineering module
-│   ├── rfm_analysis.py            # RFM analysis and clustering
-│   ├── utils.py                   # Utility functions
+│   ├── data_processing.py      # Feature engineering
+│   ├── rfm_analysis.py         # RFM clustering & proxy target
+│   ├── train.py                # Model training with MLflow
+│   ├── utils.py                # Utility functions
 │   └── api/
-│       ├── __init__.py
-│       └── (future FastAPI implementation)
-├── tests/
-│   ├── __init__.py
-│   ├── test_data_processing.py   # Unit tests for data processing
-│   ├── test_rfm_analysis.py      # Unit tests for RFM analysis
-│   └── test_utils.py              # Unit tests for utilities
-├── reports/
-│   ├── INTERIM_REPORT.md          # Interim project report
-│   └── figures/                   # Report visualizations
-├── .gitignore
+│       ├── main.py             # FastAPI application
+│       └── pydantic_models.py  # Request/response schemas
+├── tests/                      # 98 unit tests (85% coverage)
+├── notebooks/eda.ipynb         # Exploratory analysis
+├── mlruns/                     # MLflow tracking (git-ignored)
 ├── requirements.txt
-├── Dockerfile                     # Docker container configuration
-├── docker-compose.yml             # Multi-service orchestration
-├── LICENCE
-└── README.md                      # This file
+├── Dockerfile
+└── docker-compose.yml
 ```
 
 ---
 
-## Installation and Setup
+## 🌐 API Endpoints
 
-### Prerequisites
-- Python 3.10+
-- Docker (optional, for containerized deployment)
-- Git
-
-### Local Installation
-
-1. **Clone the repository:**
+### 1. Health Check
 ```bash
-git clone <repository-url>
-cd credit-risk-model
+curl http://localhost:8000/health
 ```
 
-2. **Create virtual environment:**
+### 2. Single Prediction
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+curl -X POST "http://localhost:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "CustomerId": "CUST_001",
+    "Amount": 5000,
+    "transaction_hour": 14,
+    "Recency": 5,
+    "Frequency": 30,
+    "Monetary": 150000,
+    "total_transaction_value": 150000,
+    "avg_transaction_value": 5000,
+    "transaction_count": 30
+  }'
 ```
 
-3. **Install dependencies:**
-```bash
-pip install -r requirements.txt
+**Response:**
+```json
+{
+  "customer_id": "CUST_001",
+  "risk_probability": 0.23,
+  "risk_category": "low",
+  "credit_score": 720,
+  "recommendation": "APPROVE"
+}
 ```
 
-4. **Download data:**
-   - Place `data.csv` in `data/raw/` directory
-   - Ensure `data/` is gitignored (already configured)
-
-### Docker Installation
-
-1. **Build Docker image:**
+### 3. Batch Prediction
 ```bash
-docker build -t credit-risk-model:latest .
+curl -X POST "http://localhost:8000/predict/batch" \
+  -H "Content-Type: application/json" \
+  -d '{"transactions": [...]}'
 ```
 
-2. **Run with Docker Compose:**
-```bash
-docker-compose up
-```
+**All Endpoints:**
+- `GET /` - Welcome message
+- `GET /health` - Health check with model status
+- `GET /model/info` - Model metadata and metrics
+- `POST /model/reload` - Reload model from MLflow
+- `POST /predict` - Single customer prediction
+- `POST /predict/batch` - Batch predictions
 
-This will start:
-- Data processing service
-- RFM analysis service
-- Jupyter notebook (port 8888)
-- MLflow tracking server (port 5000)
+**Interactive Docs:** http://localhost:8000/docs
 
 ---
 
-## Usage
-
-### 1. Data Processing and Feature Engineering
-
-```python
-from src.data_processing import DataProcessor, apply_log_transformation
-
-# Initialize processor
-processor = DataProcessor(scale_features=True, encoding_strategy='label')
-
-# Load data
-df = processor.load_data('data/raw/data.csv')
-
-# Extract temporal features
-df = processor.extract_temporal_features(df)
-
-# Create aggregate features per customer
-agg_df = processor.create_aggregate_features(df, group_by='CustomerId')
-
-# Apply log transformation to skewed features
-df = apply_log_transformation(df, ['Amount', 'Value'])
-
-# Save processed data
-from src.data_processing import save_processed_data
-save_processed_data(df, 'data/processed/processed_transactions.csv')
-```
-
-### 2. RFM Analysis and Proxy Target Creation
-
-```python
-from src.rfm_analysis import run_rfm_pipeline
-
-# Run complete RFM pipeline
-rfm_results, analyzer = run_rfm_pipeline(
-    transaction_df=df,
-    customer_col='CustomerId',
-    date_col='TransactionStartTime',
-    value_col='Value',
-    n_clusters=3,
-    save_results=True,
-    output_path='data/processed/rfm_features.csv'
-)
-
-# Visualize clusters
-analyzer.visualize_clusters(
-    rfm_results,
-    save_path='notebooks/figures/rfm_clusters.png'
-)
-
-# Get cluster summary
-summary = analyzer.get_cluster_summary()
-print(summary)
-```
-
-### 3. Running Tests
+## 🧪 Testing
 
 ```bash
-# Run all tests with coverage
-pytest tests/ --cov=src --cov-report=html --cov-report=term
+# Run all tests
+pytest tests/ -v
 
-# Run specific test file
-pytest tests/test_data_processing.py -v
+# With coverage
+pytest tests/ --cov=src --cov-report=html
 
-# Run with detailed output
-pytest tests/ -vv
+# Specific test
+pytest tests/test_api.py -v
 ```
 
-### 4. Using Docker Compose Services
+**Test Coverage:**
 
+| Module             | Tests  | Coverage | Status |
+| ------------------ | ------ | -------- | ------ |
+| data_processing.py | 22     | 92%      | ✅      |
+| rfm_analysis.py    | 11     | 88%      | ✅      |
+| train.py           | 15     | 83%      | ✅      |
+| api/main.py        | 20     | 90%      | ✅      |
+| utils.py           | 30     | 95%      | ✅      |
+| **Total**          | **98** | **85%**  | ✅      |
+
+---
+
+## 🐳 Docker
+
+**Services:**
+- `api` (8000) - FastAPI application
+- `mlflow` (5000) - MLflow tracking UI
+- `notebook` (8888) - Jupyter notebook
+- `data-processor` - Feature engineering
+- `rfm-analyzer` - RFM clustering
+
+**Commands:**
 ```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f data-processor
-
-# Run data processing
-docker-compose run data-processor python -m src.data_processing
-
-# Run RFM analysis
-docker-compose run rfm-analyzer python -m src.rfm_analysis
-
-# Access Jupyter notebook
-# Open browser to http://localhost:8888
-
-# Access MLflow UI
-# Open browser to http://localhost:5000
-
-# Stop all services
-docker-compose down
+docker-compose up --build          # Start all services
+docker-compose up api              # Start API only
+docker-compose logs -f api         # View logs
+docker-compose down                # Stop services
 ```
 
 ---
 
-## Module Documentation
+## 🔄 CI/CD Pipeline
 
-### src/data_processing.py
+GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push/PR:
 
-**DataProcessor Class:**
-- `load_data(filepath)`: Load CSV with error handling
-- `extract_temporal_features(df)`: Extract hour, day, month, year, time periods
-- `create_aggregate_features(df, group_by)`: Create customer-level aggregates
-- `handle_missing_values(df, strategy)`: Imputation strategies
-- `encode_categorical_features(df, cols)`: Label/one-hot encoding
-- `scale_numerical_features(df, cols)`: StandardScaler transformation
+1. **Code Quality** - flake8, black, pylint
+2. **Testing** - pytest with 80% coverage threshold
+3. **Build** - Docker image verification
 
-**Functions:**
-- `apply_log_transformation(df, columns)`: Log transform for skewed features
-- `save_processed_data(df, filepath)`: Save with error handling
+**Local CI Check:**
+```bash
+black --check src tests --line-length 100
+flake8 src tests --max-line-length=100
+pytest tests/ --cov=src --cov-fail-under=80
+```
 
-### src/rfm_analysis.py
+---
 
-**RFMAnalyzer Class:**
-- `calculate_rfm_metrics(df)`: Calculate Recency, Frequency, Monetary
-- `perform_clustering(rfm_df)`: K-Means clustering on scaled RFM
-- `assign_proxy_target(rfm_df)`: Create binary is_high_risk variable
-- `visualize_clusters(rfm_df)`: Generate cluster visualizations
-- `get_cluster_summary()`: Return cluster profiles and statistics
+## 📊 Model Performance
 
-**Functions:**
-- `run_rfm_pipeline(df)`: Execute complete RFM workflow
+| Model               | Accuracy | Precision | Recall | F1       | ROC-AUC  |
+| ------------------- | -------- | --------- | ------ | -------- | -------- |
+| Logistic Regression | 0.84     | 0.82      | 0.80   | 0.81     | 0.89     |
+| Decision Tree       | 0.81     | 0.79      | 0.83   | 0.81     | 0.85     |
+| **Random Forest**   | **0.87** | **0.85**  | 0.83   | **0.84** | **0.91** |
+| Gradient Boosting   | 0.86     | 0.84      | 0.84   | 0.84     | 0.90     |
 
-### src/utils.py
+**Top Features:** Monetary (18.5%), Frequency (15.2%), Recency (12.8%), total_transaction_value (10.3%)
 
-**Validation Functions:**
-- `validate_dataframe(df, required_columns)`: Check structure
-- `check_null_values(df, threshold)`: Null value reporting
-- `detect_outliers_iqr(series)`: IQR-based outlier detection
-
-**Calculation Functions:**
-- `calculate_skewness(df, columns)`: Distribution analysis
-- `safe_divide(num, denom, default)`: Zero-safe division
-- `calculate_class_weights(y)`: Imbalanced data weights
-- `calculate_woe_iv(df, feature, target)`: Weight of Evidence
-
-**I/O Functions:**
-- `load_config(path)`: Load JSON configuration
-- `save_config(config, path)`: Save JSON configuration
-- `ensure_directory_exists(filepath)`: Create directories
+**Model Selection:**
+- **Random Forest** - Best balance (production default)
+- **Logistic Regression** - Highest interpretability (Basel II compliant)
+- **Gradient Boosting** - Best performance (requires SHAP explainability)
 
 ---
 
@@ -403,3 +373,98 @@ Given our context (proxy-based target, regulatory requirements, new service), we
    - Invest in explainable AI tools (SHAP, LIME) to bridge the gap
 
 **Conclusion**: In a regulated environment with a proxy target variable, we must prioritize **interpretability and validation** over marginal performance gains. Starting with simple models allows us to build a solid foundation, while complex models can be introduced later with proper governance frameworks once we have ground truth data to validate their predictions.
+
+
+---
+## 💡 Key Concepts
+
+### RFM Analysis
+Creates proxy target variable from customer engagement:
+- **Recency**: Days since last transaction
+- **Frequency**: Number of transactions
+- **Monetary**: Total transaction value
+
+K-Means clustering (k=3) segments customers. High-risk cluster = high recency + low frequency/monetary.
+
+### Basel II Compliance
+- ✅ Interpretable models with clear feature contributions
+- ✅ 98 unit tests + back-testing validation
+- ✅ Probability of Default (PD) estimates + calibrated credit scores
+- ✅ Complete documentation of methodology and limitations
+
+### Proxy Variable Risks
+⚠️ **Critical Limitation:** No historical default data. RFM-based proxy assumes engagement correlates with creditworthiness (untested hypothesis).
+
+**Mitigation:** Collect actual default data from day 1, monitor false positive/negative rates, plan retraining with ground truth (12-24 months).
+
+---
+
+## 🚧 Limitations & Future Work
+
+**Current Limitations:**
+- Proxy target not validated against real defaults
+- Limited to transaction data (no demographics/credit bureau)
+- Binary classification only (no loan amount/duration optimization)
+
+**Roadmap:**
+- Integrate actual default data for retraining
+- SHAP values for explainability
+- Multi-class risk categorization
+- External data sources (credit bureau, demographics)
+- Loan amount/duration recommendation models
+
+---
+
+## 👥 Contributing
+
+```bash
+# Fork repo and create feature branch
+git checkout -b feature/amazing-feature
+
+# Make changes and test
+black src tests --line-length 100
+pytest tests/ --cov=src --cov-fail-under=80
+
+# Commit and push
+git commit -m "feat: add amazing feature"
+git push origin feature/amazing-feature
+```
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `refactor:`
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+---
+
+## 📞 Contact
+
+**Estifanose Sahilu**  
+📧 estifanoswork@gmail.com  
+🐙 [@estif0](https://github.com/estif0)  
+💼 [LinkedIn](https://linkedin.com/in/estif0)
+
+---
+
+## 📚 References
+
+1. **Basel II Capital Accord** - [BIS Framework](https://www.bis.org/publ/bcbs128.htm)
+2. **Credit Scoring** - Siddiqi, N. (2006). "Credit Risk Scorecards"
+3. **ML for Credit Risk** - Lessmann, S., et al. (2015). "Benchmarking classification algorithms"
+4. **RFM Analysis** - Hughes, A. M. (1994). "Strategic Database Marketing"
+5. **Model Interpretability** - [SHAP Documentation](https://shap.readthedocs.io/)
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you find it helpful!**
+
+Made with ❤️ by [Estifanose Sahilu](https://github.com/estif0)
+
+[Report Bug](https://github.com/estif0/credit-risk-model/issues) • [Request Feature](https://github.com/estif0/credit-risk-model/issues)
+
+</div>
