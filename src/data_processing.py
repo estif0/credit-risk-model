@@ -367,64 +367,62 @@ class DataProcessor(BaseEstimator, TransformerMixin):
         """Transform the data (sklearn compatibility)."""
         return X
 
+    def apply_log_transformation(
+        self, df: pd.DataFrame, columns: List[str], offset: float = 1.0
+    ) -> pd.DataFrame:
+        """
+        Apply log transformation to skewed features.
 
-def apply_log_transformation(
-    df: pd.DataFrame, columns: List[str], offset: float = 1.0
-) -> pd.DataFrame:
-    """
-    Apply log transformation to skewed features.
+        Args:
+            df: Input DataFrame
+            columns: List of columns to transform
+            offset: Small constant to add before log (handles zeros)
 
-    Args:
-        df: Input DataFrame
-        columns: List of columns to transform
-        offset: Small constant to add before log (handles zeros)
+        Returns:
+            DataFrame with log-transformed features
+        """
+        try:
+            logger.info(f"Applying log transformation to {len(columns)} features")
+            df_copy = df.copy()
 
-    Returns:
-        DataFrame with log-transformed features
-    """
-    try:
-        logger.info(f"Applying log transformation to {len(columns)} features")
-        df_copy = df.copy()
+            for col in columns:
+                if col not in df_copy.columns:
+                    logger.warning(f"Column '{col}' not found, skipping")
+                    continue
 
-        for col in columns:
-            if col not in df_copy.columns:
-                logger.warning(f"Column '{col}' not found, skipping")
-                continue
+                # Handle negative values by taking absolute value
+                df_copy[f"{col}_log"] = np.log1p(np.abs(df_copy[col]) + offset)
 
-            # Handle negative values by taking absolute value
-            df_copy[f"{col}_log"] = np.log1p(np.abs(df_copy[col]) + offset)
+            logger.info("Log transformation complete")
+            return df_copy
 
-        logger.info("Log transformation complete")
-        return df_copy
+        except Exception as e:
+            logger.error(f"Error in log transformation: {str(e)}")
+            raise
 
-    except Exception as e:
-        logger.error(f"Error in log transformation: {str(e)}")
-        raise
+    def save_processed_data(self, df: pd.DataFrame, filepath: str) -> None:
+        """
+        Save processed data to CSV with error handling.
 
+        Args:
+            filepath: Output file path
+            df: DataFrame to save
 
-def save_processed_data(df: pd.DataFrame, filepath: str) -> None:
-    """
-    Save processed data to CSV with error handling.
+        Raises:
+            IOError: If file cannot be written
+        """
+        try:
+            logger.info(f"Saving processed data to {filepath}")
+            df.to_csv(filepath, index=False)
+            logger.info(f"Successfully saved {len(df)} rows to {filepath}")
 
-    Args:
-        filepath: Output file path
-        df: DataFrame to save
+        except IOError as e:
+            logger.error(f"Error saving file: {str(e)}")
+            raise IOError(f"Cannot write to {filepath}") from e
 
-    Raises:
-        IOError: If file cannot be written
-    """
-    try:
-        logger.info(f"Saving processed data to {filepath}")
-        df.to_csv(filepath, index=False)
-        logger.info(f"Successfully saved {len(df)} rows to {filepath}")
-
-    except IOError as e:
-        logger.error(f"Error saving file: {str(e)}")
-        raise IOError(f"Cannot write to {filepath}") from e
-
-    except Exception as e:
-        logger.error(f"Unexpected error saving data: {str(e)}")
-        raise
+        except Exception as e:
+            logger.error(f"Unexpected error saving data: {str(e)}")
+            raise
 
 
 if __name__ == "__main__":
@@ -442,11 +440,15 @@ if __name__ == "__main__":
         agg_df = processor.create_aggregate_features(df)
 
         # Apply log transformation to skewed features
-        df = apply_log_transformation(df, ["Amount", "Value"])
+        df = processor.apply_log_transformation(df, ["Amount", "Value"])
 
         # Save processed data
-        save_processed_data(df, "../data/processed/processed_transactions.csv")
-        save_processed_data(agg_df, "../data/processed/aggregate_features.csv")
+        processor.save_processed_data(
+            df, "../data/processed/processed_transactions.csv"
+        )
+        processor.save_processed_data(
+            agg_df, "../data/processed/aggregate_features.csv"
+        )
 
         logger.info("Data processing pipeline completed successfully")
 
