@@ -11,3 +11,7 @@ mlflow
 xgboost
 lightgbm
 pytest-mock
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
