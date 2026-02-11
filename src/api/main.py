@@ -28,18 +28,20 @@ from src.api.pydantic_models import (
     ErrorResponse,
     ModelInfo,
 )
+from src.config import config
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=getattr(logging, config.api.log_level.upper()),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Credit Risk Prediction API",
-    description="API for predicting credit risk using transaction data and RFM metrics",
-    version="1.0.0",
+    title=config.api.title,
+    description=config.api.description,
+    version=config.api.version,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -69,11 +71,9 @@ class ModelManager:
     """Manager for loading and accessing ML models."""
 
     def __init__(self):
-        self.mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "./mlruns")
-        self.experiment_name = os.getenv(
-            "MLFLOW_EXPERIMENT_NAME", "credit-risk-modeling"
-        )
-        self.model_stage = os.getenv("MODEL_STAGE", "Production")
+        self.mlflow_tracking_uri = config.ml.tracking_uri
+        self.experiment_name = config.ml.experiment_name
+        self.model_stage = config.ml.model_stage
 
     def load_best_model(self):
         """
@@ -454,5 +454,9 @@ if __name__ == "__main__":
 
     # Run the API
     uvicorn.run(
-        "src.api.main:app", host="0.0.0.0", port=9000, reload=True, log_level="info"
+        "src.api.main:app",
+        host=config.api.host,
+        port=config.api.port,
+        reload=True,
+        log_level=config.api.log_level.lower(),
     )

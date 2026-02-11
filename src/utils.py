@@ -160,51 +160,6 @@ def safe_divide(
     return result
 
 
-def load_config(config_path: str) -> Dict[str, Any]:
-    """
-    Load configuration from JSON file.
-
-    Args:
-        config_path: Path to JSON configuration file
-
-    Returns:
-        Dictionary with configuration parameters
-
-    Raises:
-        FileNotFoundError: If config file doesn't exist
-        json.JSONDecodeError: If config file is invalid JSON
-    """
-    try:
-        with open(config_path, "r") as f:
-            config = json.load(f)
-        logger.info(f"Loaded configuration from {config_path}")
-        return config
-    except FileNotFoundError:
-        logger.error(f"Configuration file not found: {config_path}")
-        raise
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in config file: {str(e)}")
-        raise
-
-
-def save_config(config: Dict[str, Any], config_path: str) -> None:
-    """
-    Save configuration to JSON file.
-
-    Args:
-        config: Dictionary with configuration parameters
-        config_path: Path where to save JSON file
-    """
-    try:
-        ensure_directory_exists(config_path)
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-        logger.info(f"Saved configuration to {config_path}")
-    except Exception as e:
-        logger.error(f"Error saving configuration: {str(e)}")
-        raise
-
-
 def calculate_class_weights(y: pd.Series) -> Dict[int, float]:
     """
     Calculate class weights for imbalanced classification.

@@ -14,4 +14,4 @@ pytest-mock
 fastapi
 uvicorn[standard]
 pydantic
-python-multipart
+python-multiparthttpx

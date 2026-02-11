@@ -16,8 +16,6 @@ from src.utils import (
     calculate_skewness,
     ensure_directory_exists,
     safe_divide,
-    load_config,
-    save_config,
     format_large_number,
     calculate_class_weights,
     merge_transaction_features,
@@ -103,41 +101,6 @@ def test_safe_divide():
     assert result[0] == 5.0
     assert result[1] == 0.0  # Division by zero handled
     assert result[2] == 6.0
-
-
-def test_load_config(tmp_path):
-    """Test configuration loading from JSON."""
-    config_file = tmp_path / "config.json"
-    config_data = {"param1": 10, "param2": "value"}
-
-    with open(config_file, "w") as f:
-        json.dump(config_data, f)
-
-    loaded_config = load_config(str(config_file))
-
-    assert loaded_config == config_data
-
-
-def test_load_config_missing_file():
-    """Test load_config raises FileNotFoundError for non-existent file."""
-    with pytest.raises(FileNotFoundError):
-        load_config("nonexistent_config.json")
-
-
-def test_save_config(tmp_path):
-    """Test configuration saving to JSON."""
-    config_file = tmp_path / "test_config.json"
-    config_data = {"n_clusters": 3, "random_state": 42}
-
-    save_config(config_data, str(config_file))
-
-    assert config_file.exists()
-
-    # Verify content
-    with open(config_file, "r") as f:
-        loaded = json.load(f)
-
-    assert loaded == config_data
 
 
 def test_format_large_number():

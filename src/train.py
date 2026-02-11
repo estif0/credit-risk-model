@@ -15,6 +15,7 @@ from pathlib import Path
 import logging
 from datetime import datetime
 import json
+from src.config import config
 
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
@@ -61,11 +62,11 @@ class ModelTrainer:
 
     def __init__(
         self,
-        experiment_name: str = "credit-risk-modeling",
-        tracking_uri: str = "./mlruns",
-        random_state: int = 42,
-        test_size: float = 0.2,
-        cv_folds: int = 5,
+        experiment_name: str = config.ml.experiment_name,
+        tracking_uri: str = config.ml.tracking_uri,
+        random_state: int = config.ml.random_state,
+        test_size: float = config.ml.test_size,
+        cv_folds: int = config.ml.cv_folds,
     ):
         """
         Initialize the ModelTrainer.
@@ -668,8 +669,8 @@ def main():
     """Main execution function."""
     try:
         # Setup paths
-        data_path = Path("data/processed/modeling_data.csv")
-        output_dir = Path("reports/model_results")
+        data_path = config.paths.processed_data_path
+        output_dir = config.paths.reports_dir / "model_results"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("=" * 80)
@@ -682,13 +683,7 @@ def main():
         logger.info(f"Loaded {len(df):,} samples with {len(df.columns)} columns")
 
         # Initialize trainer
-        trainer = ModelTrainer(
-            experiment_name="credit-risk-modeling",
-            tracking_uri="./mlruns",
-            random_state=42,
-            test_size=0.2,
-            cv_folds=5,
-        )
+        trainer = ModelTrainer()
 
         # Prepare data
         X_train, X_test, y_train, y_test = trainer.prepare_data(
@@ -712,7 +707,7 @@ def main():
         logger.info("TRAINING PIPELINE COMPLETED SUCCESSFULLY")
         logger.info("=" * 80)
         logger.info(f"\nResults saved to {output_dir}")
-        logger.info(f"MLflow tracking at: ./mlruns")
+        logger.info(f"MLflow tracking at: {config.ml.tracking_uri}")
         logger.info(f"\nTo view MLflow UI, run: mlflow ui")
 
     except Exception as e:
