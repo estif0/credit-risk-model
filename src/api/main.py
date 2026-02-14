@@ -18,6 +18,9 @@ import mlflow.sklearn
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.api.middleware import RequestLoggingMiddleware, RateLimitMiddleware
 
 from src.api.pydantic_models import (
     TransactionInput,
@@ -45,6 +48,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Add Middleware
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # Add CORS middleware
 app.add_middleware(
