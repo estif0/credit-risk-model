@@ -22,7 +22,7 @@
 
 End-to-end **Credit Scoring System** for Bati Bank's buy-now-pay-later service. Transforms behavioral transaction data into credit risk predictions using RFM analytics and machine learning.
 
-**Highlights:** RFM Clustering Proxy Target • 23+ Engineered Features • 4 ML Models (LogReg, DecisionTree, RandomForest, GradientBoosting) • MLflow Experiment Tracking • FastAPI REST API • Docker Deployment • 98 Unit Tests (85% Coverage) • CI/CD Pipeline • Basel II Compliant
+**Highlights:** RFM Clustering Proxy Target • 23+ Engineered Features • 4 ML Models (LogReg, DecisionTree, RandomForest, GradientBoosting) • MLflow Experiment Tracking • **Streamlit Dashboard** • FastAPI REST API with **Monitoring** • Docker Deployment • 98 Unit Tests (85% Coverage) • CI/CD Pipeline • Basel II Compliant
 
 ---
 
@@ -45,8 +45,11 @@ python src/run_rfm_pipeline.py
 python src/train.py
 
 # Start API
-uvicorn src.api.main:app --reload --port 8000
-# Visit http://localhost:8000/docs
+uvicorn src.api.main:app --reload --port 9000
+
+# Start Dashboard
+streamlit run src/dashboard/app.py
+# Visit http://localhost:8501
 ```
 
 ### Docker Setup
@@ -136,7 +139,11 @@ curl -X POST "http://localhost:8000/predict/batch" \
 - `POST /predict` - Single customer prediction
 - `POST /predict/batch` - Batch predictions
 
-**Interactive Docs:** http://localhost:8000/docs
+**Interactive Docs:** http://localhost:9000/docs
+
+**Monitoring:**
+- Request Logging: Enabled (Console/File)
+- Rate Limiting: 100 requests/minute per IP
 
 ---
 
