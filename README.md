@@ -18,7 +18,37 @@
 
 ---
 
-## 📋 Overview
+## � Visual Showcase
+
+### 🖥️ Real-time Dashboard
+<div align="center">
+
+| **Main Overview** | **Single Prediction** |
+|:---:|:---:|
+| ![Dashboard Overview](reports/figures/dashboard_overview.png) | ![Single Prediction](reports/figures/dashboard_single_prediction.png) |
+
+| **Model Selection** | **Batch Analysis** |
+|:---:|:---:|
+| ![Model Selection](reports/figures/dashboard_model_selection.png) | ![Batch Analysis](reports/figures/dashboard_batch_csv_analysis.png) |
+
+</div>
+
+### 📈 Model Insights & Analytics
+<div align="center">
+
+| **RFM Clusters** | **Correlation Heatmap** |
+|:---:|:---:|
+| ![RFM Clusters](reports/figures/rfm_clusters.png) | ![Correlation Heatmap](reports/figures/correlation_heatmap.png) |
+
+| **Categorical Distributions** | **Temporal Trends** |
+|:---:|:---:|
+| ![Distributions](reports/figures/categorical_distributions.png) | ![Temporal](reports/figures/temporal_analysis.png) |
+
+</div>
+
+---
+
+## �📋 Overview
 
 End-to-end **Credit Scoring System** for Bati Bank's buy-now-pay-later service. Transforms behavioral transaction data into credit risk predictions using RFM analytics and machine learning.
 
@@ -453,7 +483,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 **Estifanose Sahilu**  
 📧 estifanoswork@gmail.com  
-🐙 [@estif0](https://github.com/estif0)  
+Base de code: [GitHub](https://github.com/estif0/credit-risk-model)  
 💼 [LinkedIn](https://linkedin.com/in/estif0)
 
 ---

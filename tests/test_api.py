@@ -59,9 +59,10 @@ def test_root_endpoint(client):
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert "name" in data
-    assert "version" in data
-    assert data["status"] == "running"
+    assert "message" in data
+    assert "docs" in data
+    assert "health" in data
+    assert data["message"] == "Welcome to the Credit Risk Scoring API"
 
 
 def test_health_endpoint_without_model(client):
