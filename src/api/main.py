@@ -309,6 +309,8 @@ async def load_model(run_id: str):
                 "type": MODEL_STATE["model_type"],
                 "version": MODEL_STATE["model_version"],
                 "metrics": MODEL_STATE["metrics"],
+                "loaded_at": MODEL_STATE["loaded_at"],
+                "created": MODEL_STATE.get("created", "Unknown"),
             },
         }
     except Exception as e:
@@ -373,12 +375,11 @@ async def get_model_info():
         model_type=MODEL_STATE.get("model_type", "unknown"),
         accuracy=metrics.get("accuracy"),
         roc_auc=metrics.get("roc_auc"),
-        training_date=(
-            MODEL_STATE.get("loaded_at").strftime("%Y-%m-%d")
-            if MODEL_STATE.get("loaded_at")
-            else None
-        ),
-        features=MODEL_STATE.get("features"),
+        f1_score=metrics.get("f1_score"),
+        precision=metrics.get("precision"),
+        recall=metrics.get("recall"),
+        training_date=MODEL_STATE.get("created", "Unknown"),
+        loaded_at=MODEL_STATE.get("loaded_at"),
     )
 
 

@@ -264,7 +264,11 @@ class ModelInfo(BaseModel):
     model_type: str = Field(..., description="Model type")
     accuracy: Optional[float] = Field(None, ge=0, le=1, description="Model accuracy")
     roc_auc: Optional[float] = Field(None, ge=0, le=1, description="ROC-AUC score")
+    f1_score: Optional[float] = Field(None, ge=0, le=1, description="F1 score")
+    precision: Optional[float] = Field(None, ge=0, le=1, description="Precision")
+    recall: Optional[float] = Field(None, ge=0, le=1, description="Recall")
     training_date: Optional[str] = Field(None, description="Training date")
+    loaded_at: Optional[datetime] = Field(None, description="Model load timestamp")
     features: Optional[List[str]] = Field(None, description="Feature names")
 
     class Config:
@@ -275,7 +279,11 @@ class ModelInfo(BaseModel):
                 "model_type": "Random Forest",
                 "accuracy": 0.92,
                 "roc_auc": 0.95,
+                "f1_score": 0.91,
+                "precision": 0.90,
+                "recall": 0.93,
                 "training_date": "2024-12-16",
+                "loaded_at": "2024-12-16T10:30:00Z",
                 "features": ["Recency", "Frequency", "Monetary", "transaction_count"],
             }
         }
