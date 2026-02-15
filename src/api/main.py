@@ -443,17 +443,15 @@ def get_confidence_level(risk_probability: float) -> str:
 def prepare_features(transaction: TransactionInput) -> pd.DataFrame:
     """
     Prepare features from transaction input for model prediction.
-
-    Args:
-        transaction: Transaction input data
-
-    Returns:
-        DataFrame with features
     """
-    # Create feature dictionary (excluding IDs)
+    # Exact features expected by the model in the required order
+    # (Based on model.feature_names_in_)
     features = {
+        "CountryCode": 256,  # Default for UGX
         "Amount": transaction.Amount,
         "Value": transaction.Value,
+        "PricingStrategy": 2,  # Default common strategy
+        "FraudResult": 0,  # Mock feature (usually target, but included in model)
         "transaction_hour": transaction.transaction_hour,
         "transaction_day": transaction.transaction_day,
         "transaction_month": transaction.transaction_month,
@@ -461,14 +459,47 @@ def prepare_features(transaction: TransactionInput) -> pd.DataFrame:
         "is_weekend": transaction.is_weekend,
         "total_transaction_value": transaction.total_transaction_value,
         "avg_transaction_value": transaction.avg_transaction_value,
+        "std_transaction_value": 0.0,
+        "min_transaction_value": transaction.Amount,
+        "max_transaction_value": transaction.Amount,
         "transaction_count": transaction.transaction_count,
+        "value_range": 0.0,
+        "value_cv": 0.0,
+        "ProductCategory_woe": 0.0,  # Mock neutral weight
+        "ChannelId_woe": 0.0,  # Mock neutral weight
         "Recency": transaction.Recency,
         "Frequency": transaction.Frequency,
         "Monetary": transaction.Monetary,
     }
 
-    # Convert to DataFrame
-    df = pd.DataFrame([features])
+    # Create DataFrame with specific column order
+    column_order = [
+        "CountryCode",
+        "Amount",
+        "Value",
+        "PricingStrategy",
+        "FraudResult",
+        "transaction_hour",
+        "transaction_day",
+        "transaction_month",
+        "transaction_year",
+        "is_weekend",
+        "total_transaction_value",
+        "avg_transaction_value",
+        "std_transaction_value",
+        "min_transaction_value",
+        "max_transaction_value",
+        "transaction_count",
+        "value_range",
+        "value_cv",
+        "ProductCategory_woe",
+        "ChannelId_woe",
+        "Recency",
+        "Frequency",
+        "Monetary",
+    ]
+
+    df = pd.DataFrame([features])[column_order]
 
     return df
 

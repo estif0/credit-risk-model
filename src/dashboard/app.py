@@ -210,10 +210,10 @@ def main():
         overview_data = {}
 
         if active_model_info:
-            metrics = active_model_info.get("metrics", {})
+            # API returns flat structure now
             overview_data = {
-                "accuracy": metrics.get("accuracy"),
-                "roc_auc": metrics.get("roc_auc"),
+                "accuracy": active_model_info.get("accuracy"),
+                "roc_auc": active_model_info.get("roc_auc"),
                 "model_type": active_model_info.get("model_type"),
                 "version": active_model_info.get("model_version"),
                 "created": active_model_info.get("created"),

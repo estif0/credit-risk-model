@@ -11,9 +11,11 @@ mlflow
 xgboost
 lightgbm
 pytest-mock
+pytest-cov
 fastapi
 uvicorn[standard]
 pydantic
-python-multiparthttpx
+python-multipart
+httpx
 streamlit
 plotly
