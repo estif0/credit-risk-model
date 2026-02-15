@@ -1,0 +1,5 @@
+,accuracy,precision,recall,f1_score,roc_auc
+decision_tree,1.0,1.0,1.0,1.0,1.0
+random_forest,1.0,1.0,1.0,1.0,1.0
+gradient_boosting,1.0,1.0,1.0,1.0,1.0
+logistic_regression,0.9733,0.8143,0.9955,0.8958,0.9952

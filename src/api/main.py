@@ -105,20 +105,34 @@ class ModelManager:
                 experiment_ids=[experiment.experiment_id],
                 filter_string="status = 'FINISHED'",
                 order_by=["metrics.roc_auc DESC"],
-                max_results=1,
+                max_results=3,
             )
 
             if runs.empty:
                 raise ValueError("No finished runs found in experiment")
 
-            best_run = runs.iloc[0]
-            run_id = best_run.run_id
+            best_run = None
+            run_id = None
+            model = None
 
-            logger.info(f"Loading model from run: {run_id}")
+            for _, run in runs.iterrows():
+                try:
+                    current_run_id = run.run_id
+                    logger.info(f"Attempting to load model from run: {current_run_id}")
+                    model_uri = f"runs:/{current_run_id}/model"
+                    model = mlflow.sklearn.load_model(model_uri)
+                    best_run = run
+                    run_id = current_run_id
+                    logger.info(f"Successfully loaded model from run: {run_id}")
+                    break
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load model from run {current_run_id}: {e}"
+                    )
+                    continue
 
-            # Load model
-            model_uri = f"runs:/{run_id}/model"
-            model = mlflow.sklearn.load_model(model_uri)
+            if model is None:
+                raise RuntimeError("Failed to load any model from top runs")
 
             # Extract metadata
             metrics = {
@@ -132,21 +146,107 @@ class ModelManager:
             model_name = best_run.get("tags.mlflow.runName", "unknown")
 
             # Update global state
-            MODEL_STATE["model"] = model
-            MODEL_STATE["model_name"] = model_name
-            MODEL_STATE["model_version"] = "1.0.0"
-            MODEL_STATE["model_type"] = best_run.get("params.model_type", "unknown")
-            MODEL_STATE["metrics"] = metrics
-            MODEL_STATE["loaded_at"] = datetime.utcnow()
+            self._update_global_state(model, best_run, model_name, metrics)
 
-            logger.info(f"Model loaded successfully: {model_name}")
-            logger.info(f"Model metrics: {metrics}")
-
-            return model, metrics
+            return model, best_run
 
         except Exception as e:
-            logger.error(f"Error loading model: {e}")
+            logger.error(f"Error loading best model: {e}")
             raise
+
+    def list_models(self) -> List[Dict]:
+        """List all available models (runs) from MLflow."""
+        try:
+            mlflow.set_tracking_uri(self.mlflow_tracking_uri)
+            experiment = mlflow.get_experiment_by_name(self.experiment_name)
+
+            if experiment is None:
+                return []
+
+            runs = mlflow.search_runs(
+                experiment_ids=[experiment.experiment_id],
+                filter_string="status = 'FINISHED'",
+                order_by=["start_time DESC"],
+            )
+
+            model_list = []
+            for _, run in runs.iterrows():
+                # Helper to safely get metric
+                def get_metric(metric_name):
+                    val = run.get(f"metrics.{metric_name}")
+                    if val is None:
+                        return None
+                    try:
+                        fval = float(val)
+                        if pd.isna(fval) or np.isinf(fval):
+                            return None
+                        return fval
+                    except (ValueError, TypeError):
+                        return None
+
+                model_list.append(
+                    {
+                        "run_id": run.run_id,
+                        "name": run.get("tags.mlflow.runName", "unknown"),
+                        "type": run.get("params.model_type", "unknown"),
+                        "roc_auc": get_metric("roc_auc"),
+                        "accuracy": get_metric("accuracy"),
+                        "created": pd.to_datetime(run.start_time).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                    }
+                )
+
+            return model_list
+
+        except Exception as e:
+            logger.error(f"Error listing models: {e}")
+            return []
+
+    def load_model_by_run_id(self, run_id: str):
+        """Load a specific model by run_id."""
+        try:
+            logger.info(f"Loading model from run: {run_id}")
+            mlflow.set_tracking_uri(self.mlflow_tracking_uri)
+
+            model_uri = f"runs:/{run_id}/model"
+            model = mlflow.sklearn.load_model(model_uri)
+            run = mlflow.get_run(run_id)
+
+            # Extract metadata
+            metrics = {
+                "accuracy": run.data.metrics.get("accuracy"),
+                "roc_auc": run.data.metrics.get("roc_auc"),
+            }
+
+            model_name = run.data.tags.get("mlflow.runName", "unknown")
+
+            # Pass the full Run object
+            self._update_global_state(model, run, model_name, metrics)
+            return model, run
+
+        except Exception as e:
+            logger.error(f"Error loading model {run_id}: {e}")
+            raise
+
+    def _update_global_state(self, model, run_data, model_name, metrics):
+        """Helper to update global model state."""
+        MODEL_STATE["model"] = model
+        MODEL_STATE["model_name"] = model_name
+
+        # run_data can be a pandas Series (from search_runs) or mlflow.entities.Run (from get_run)
+        if isinstance(run_data, pd.Series):
+            MODEL_STATE["model_version"] = run_data.run_id
+            MODEL_STATE["model_type"] = run_data.get("params.model_type", "unknown")
+        else:
+            # Assume mlflow.entities.Run
+            MODEL_STATE["model_version"] = run_data.info.run_id
+            MODEL_STATE["model_type"] = run_data.data.params.get(
+                "model_type", "unknown"
+            )
+
+        MODEL_STATE["metrics"] = metrics
+        MODEL_STATE["loaded_at"] = datetime.utcnow()
 
 
 # Initialize model manager
@@ -165,15 +265,44 @@ async def startup_event():
         logger.warning("API will start without a loaded model")
 
 
-@app.get("/", tags=["Root"])
+@app.get("/model/list", tags=["Model Management"])
+async def list_models():
+    """List all available trained models."""
+    models = model_manager.list_models()
+    return {"models": models}
+
+
+@app.post("/model/load/{run_id}", tags=["Model Management"])
+async def load_model(run_id: str):
+    """Load a specific model by run ID."""
+    try:
+        model, run = model_manager.load_model_by_run_id(run_id)
+
+        return {
+            "message": f"Successfully loaded model from run {run_id}",
+            "model_info": {
+                "name": MODEL_STATE["model_name"],
+                "type": MODEL_STATE["model_type"],
+                "version": MODEL_STATE["model_version"],
+                "metrics": MODEL_STATE["metrics"],
+            },
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to load model: {str(e)}",
+        )
+
+
+@app.get("/", tags=["General"])
 async def root():
-    """Root endpoint with API information."""
+    """Welcome endpoint."""
     return {
-        "name": "Credit Risk Prediction API",
-        "version": "1.0.0",
-        "status": "running",
+        "message": "Welcome to the Credit Risk Scoring API",
         "docs": "/docs",
         "health": "/health",
+        "model_info": "/model/info",
+        "model_list": "/model/list",
     }
 
 

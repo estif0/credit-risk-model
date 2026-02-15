@@ -40,14 +40,16 @@ pip install -r requirements.txt
 # Place data.csv in data/raw/ (from Kaggle Xente Challenge)
 
 # Run pipeline
-python src/run_feature_engineering.py
-python src/run_rfm_pipeline.py
-python src/train.py
+# Run pipeline
+python -m src.run_feature_engineering
+python -m src.run_rfm_pipeline
+python -m src.train
 
 # Start API
 uvicorn src.api.main:app --reload --port 9000
 
 # Start Dashboard
+export PYTHONPATH=$PYTHONPATH:.
 streamlit run src/dashboard/app.py
 # Visit http://localhost:8501
 ```
