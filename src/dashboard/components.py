@@ -19,9 +19,9 @@ def header_component(title: str, subtitle: str) -> None:
     """
     st.markdown(
         f"""
-        <div style="padding: 1rem 0; border-bottom: 2px solid #f0f2f6; margin-bottom: 2rem;">
-            <h1 style="color: #0e1117; margin-bottom: 0.5rem;">{title}</h1>
-            <p style="color: #262730; font-size: 1.2rem;">{subtitle}</p>
+        <div style="padding: 1rem 0; border-bottom: 2px solid #353535; margin-bottom: 2rem;">
+            <h1 style="color: #ffffff; margin-bottom: 0.5rem;">{title}</h1>
+            <p style="color: #fcfcfc; font-size: 1.2rem;">{subtitle}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -130,7 +130,7 @@ def prediction_result_card(prediction: Dict[str, Any]) -> None:
 
     st.markdown(
         f"""
-        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f0f2f6; border-left: 5px solid {color};">
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #353535; border-left: 5px solid {color};">
             <h3 style="margin-top: 0;">Risk Assessment: <span style="color: {color}">{category.upper()}</span></h3>
             <p><strong>Credit Score:</strong> {score}</p>
             <p><strong>Default Probability:</strong> {risk_prob:.2%}</p>

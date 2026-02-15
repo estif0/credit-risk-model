@@ -137,19 +137,35 @@ def main():
     models = get_model_list()
 
     if models:
-        # Create a mapping of display name to run_id
-        model_options = {
-            f"{m['type']} ({m['created']}) - AUC: {m['roc_auc']:.3f}": m["run_id"]
-            for m in models
-        }
-        selected_option = st.sidebar.selectbox(
-            "Select Model", list(model_options.keys())
-        )
+        model_options = {}
+        for m in models:
+            # Filter out broken models (no type or no metrics)
+            if not m.get("type") or m["type"] == "unknown" or m["type"] is None:
+                continue
 
-        if selected_option:
-            run_id = model_options[selected_option]
-            if st.sidebar.button("Load Model"):
-                switch_model(run_id)
+            if m.get("roc_auc") is not None:
+                try:
+                    score = float(m["roc_auc"])
+                    label = f"{m['type']} ({m['created']}) - AUC: {score:.3f}"
+                except (ValueError, TypeError):
+                    label = f"{m['type']} ({m['created']})"
+            else:
+                # If no metrics, skip unless it's the only option?
+                # For now, include but label clearly
+                label = f"{m['type']} ({m['created']}) - No Metrics"
+            model_options[label] = m["run_id"]
+
+        if model_options:
+            selected_option = st.sidebar.selectbox(
+                "Select Model", list(model_options.keys())
+            )
+
+            if selected_option:
+                run_id = model_options[selected_option]
+                if st.sidebar.button("Load Model"):
+                    switch_model(run_id)
+        else:
+            st.sidebar.warning("No valid models found")
     else:
         st.sidebar.warning("No models found or API unavailable")
 
@@ -168,16 +184,17 @@ def main():
     st.sidebar.markdown("---")
 
     # Fetch current model info from API
+    active_model_info = {}
     try:
         response = requests.get(f"{API_URL}/model/info")
         if response.status_code == 200:
-            info = response.json()
+            active_model_info = response.json()
             st.sidebar.info(
                 f"""
                 **Active Model**
                 
-                Type: {info.get('type', 'Unknown')}
-                Version: {info.get('version', 'Unknown')}
+                Type: {active_model_info.get('type', 'Unknown')}
+                Version: {active_model_info.get('version', 'Unknown')}
                 Stage: {config.ml.model_stage}
                 """
             )
@@ -189,7 +206,36 @@ def main():
     model, run_info = load_model()
 
     if navigation == "Dashboard Overview":
-        render_overview(model, run_info)
+        # Prepare unified data for overview
+        overview_data = {}
+
+        if active_model_info:
+            metrics = active_model_info.get("metrics", {})
+            overview_data = {
+                "accuracy": metrics.get("accuracy"),
+                "roc_auc": metrics.get("roc_auc"),
+                "model_type": active_model_info.get("model_type"),
+                "version": active_model_info.get("model_version"),
+                "created": active_model_info.get("created"),
+            }
+        elif run_info is not None:
+            overview_data = {
+                "accuracy": run_info.get("metrics.accuracy"),
+                "roc_auc": run_info.get("metrics.roc_auc"),
+                "model_type": run_info.get("params.model_type"),
+                "version": run_info.get("run_id"),
+                "created": run_info.get("start_time"),
+            }
+            # Handle start_time formatting for local load
+            if overview_data["created"]:
+                try:
+                    overview_data["created"] = pd.to_datetime(
+                        overview_data["created"]
+                    ).strftime("%Y-%m-%d")
+                except:
+                    pass
+
+        render_overview(model, overview_data)
     elif navigation == "Single Prediction":
         render_single_prediction(model)
     elif navigation == "Batch Analysis":
@@ -198,33 +244,34 @@ def main():
         render_model_performance(run_info)
 
 
-def render_overview(model, run_info):
+def render_overview(model, data):
     """Render dashboard overview."""
     header_component(
         "Dashboard Overview", "Real-time credit risk monitoring and analytics"
     )
 
-    if run_info is None:
-        st.warning("No model found directly. Please train a model first.")
+    if not data:
+        st.warning("No model found. Please train or load a model.")
         return
 
     col1, col2, col3, col4 = st.columns(4)
 
+    # Safely get values
+    acc = float(data.get("accuracy") or 0.0)
+    auc = float(data.get("roc_auc") or 0.0)
+    m_type = data.get("model_type", "Unknown")
+    version = data.get("version", "N/A")
+    created = data.get("created", "Unknown")
+
     with col1:
-        metric_card("Model Accuracy", f"{run_info['metrics.accuracy']:.2%}")
+        metric_card("Model Accuracy", f"{acc:.2%}")
     with col2:
-        metric_card("ROC-AUC Score", f"{run_info['metrics.roc_auc']:.3f}")
+        metric_card("ROC-AUC Score", f"{auc:.3f}")
     with col3:
-        metric_card("Model Type", run_info["params.model_type"])
+        metric_card("Model Type", m_type)
     with col4:
-        metric_card(
-            "Training Date",
-            (
-                pd.to_datetime(run_info["start_time"]).strftime("%Y-%m-%d")
-                if hasattr(run_info, "start_time")
-                else "N/A"
-            ),
-        )
+        metric_card("Training Date", created)
+        st.caption(f"Ver: {version[:8] if version else 'N/A'}")
 
     st.markdown("### Recent Activity")
     st.info("System is ready for predictions.")

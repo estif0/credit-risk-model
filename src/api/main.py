@@ -237,13 +237,37 @@ class ModelManager:
         # run_data can be a pandas Series (from search_runs) or mlflow.entities.Run (from get_run)
         if isinstance(run_data, pd.Series):
             MODEL_STATE["model_version"] = run_data.run_id
-            MODEL_STATE["model_type"] = run_data.get("params.model_type", "unknown")
+            # Fix: params keys in search_runs are prefixed with 'params.'
+            model_type = run_data.get("params.model_type")
+            if not model_type or pd.isna(model_type):
+                # Fallback: try to infer from run name or tags
+                model_type = run_data.get("tags.mlflow.runName", "Unknown")
+            MODEL_STATE["model_type"] = model_type
+
+            # Extract start_time
+            start_time = run_data.get("start_time")
+            if start_time:
+                MODEL_STATE["created"] = pd.to_datetime(start_time).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
         else:
             # Assume mlflow.entities.Run
             MODEL_STATE["model_version"] = run_data.info.run_id
-            MODEL_STATE["model_type"] = run_data.data.params.get(
-                "model_type", "unknown"
-            )
+            model_type = run_data.data.params.get("model_type")
+            if not model_type:
+                # Fallback
+                model_type = run_data.data.tags.get("mlflow.runName", "Unknown")
+            MODEL_STATE["model_type"] = model_type
+
+            # Extract start_time
+            if run_data.info.start_time:
+                # MLflow stores time in ms? verify. usually it's timestamp in ms
+                # pd.to_datetime handles int/float as ns by default, or verify conversion
+                try:
+                    dt = datetime.fromtimestamp(run_data.info.start_time / 1000.0)
+                    MODEL_STATE["created"] = dt.strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    MODEL_STATE["created"] = "Unknown"
 
         MODEL_STATE["metrics"] = metrics
         MODEL_STATE["loaded_at"] = datetime.utcnow()
