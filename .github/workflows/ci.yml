@@ -27,6 +27,7 @@ jobs:
 
             - name: Check formatting with black
               run: |
+                  black .
                   black --check src tests notebooks
 
             - name: Lint with pylint
