@@ -8,7 +8,7 @@
 ## Slide 1: Title
 **Title:** Production-Grade Credit Risk Scoring for BNPL  
 **Subtitle:** Enhancing Bati Bank's Lending Capability with Machine Learning  
-**Presenter:** [Your Name]
+**Presenter:** Estifanose Sahilu
 
 ---
 
