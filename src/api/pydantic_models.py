@@ -76,6 +76,7 @@ class TransactionInput(BaseModel):
     CountryCode: Optional[int] = Field(
         256, description="Country code (default 256 for UGX)"
     )
+    FraudResult: Optional[int] = Field(0, description="Fraud result indicator")
 
     class Config:
         json_schema_extra = {
