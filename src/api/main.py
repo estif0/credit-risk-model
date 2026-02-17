@@ -444,29 +444,44 @@ def prepare_features(transaction: TransactionInput) -> pd.DataFrame:
     """
     Prepare features from transaction input for model prediction.
     """
-    # Exact features expected by the model in the required order
-    # (Based on model.feature_names_in_)
+    # Aggregates and advanced features
+    avg_val = transaction.avg_transaction_value
+    std_val = transaction.std_transaction_value or 0.0
+    min_val = (
+        transaction.min_transaction_value
+        if transaction.min_transaction_value is not None
+        else transaction.Amount
+    )
+    max_val = (
+        transaction.max_transaction_value
+        if transaction.max_transaction_value is not None
+        else transaction.Amount
+    )
+
+    value_range = max_val - min_val
+    value_cv = std_val / avg_val if avg_val > 0 else 0.0
+
     features = {
-        "CountryCode": 256,  # Default for UGX
+        "CountryCode": transaction.CountryCode or 256,
         "Amount": transaction.Amount,
         "Value": transaction.Value,
-        "PricingStrategy": 2,  # Default common strategy
-        "FraudResult": 0,  # Mock feature (usually target, but included in model)
+        "PricingStrategy": transaction.PricingStrategy or 2,
+        "FraudResult": transaction.FraudResult or 0,
         "transaction_hour": transaction.transaction_hour,
         "transaction_day": transaction.transaction_day,
         "transaction_month": transaction.transaction_month,
         "transaction_year": transaction.transaction_year,
         "is_weekend": transaction.is_weekend,
         "total_transaction_value": transaction.total_transaction_value,
-        "avg_transaction_value": transaction.avg_transaction_value,
-        "std_transaction_value": 0.0,
-        "min_transaction_value": transaction.Amount,
-        "max_transaction_value": transaction.Amount,
+        "avg_transaction_value": avg_val,
+        "std_transaction_value": std_val,
+        "min_transaction_value": min_val,
+        "max_transaction_value": max_val,
         "transaction_count": transaction.transaction_count,
-        "value_range": 0.0,
-        "value_cv": 0.0,
-        "ProductCategory_woe": 0.0,  # Mock neutral weight
-        "ChannelId_woe": 0.0,  # Mock neutral weight
+        "value_range": value_range,
+        "value_cv": value_cv,
+        "ProductCategory_woe": transaction.ProductCategory_woe or 0.0,
+        "ChannelId_woe": transaction.ChannelId_woe or 0.0,
         "Recency": transaction.Recency,
         "Frequency": transaction.Frequency,
         "Monetary": transaction.Monetary,

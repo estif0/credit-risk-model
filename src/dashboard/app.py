@@ -340,84 +340,57 @@ def render_single_prediction(model):
 
             submit_btn = st.form_submit_button("Assess Risk")
 
-    if submit_btn:
-        # Prepare input with ALL required features
-        # Mocks for demonstration - in production, these would come from feature store or real-time calculation
+        if submit_btn:
+            # Prepare input for API
+            txn_payload = {
+                "TransactionId": f"TXN_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "AccountId": "ACC_DASHBOARD",
+                "CustomerId": "CUST_DASHBOARD",
+                "Amount": amount,
+                "Value": value,
+                "transaction_hour": txn_hour,
+                "transaction_day": txn_date.day,
+                "transaction_month": txn_date.month,
+                "transaction_year": txn_date.year,
+                "is_weekend": 1 if txn_date.weekday() >= 5 else 0,
+                "total_transaction_value": total_val,
+                "avg_transaction_value": total_val / frequency if frequency > 0 else 0,
+                "transaction_count": frequency,
+                "Recency": recency,
+                "Frequency": frequency,
+                "Monetary": monetary,
+                # Advanced / Statistical Features from Form
+                "std_transaction_value": std_val,
+                "min_transaction_value": min_val,
+                "max_transaction_value": max_val,
+                "ProductCategory_woe": (
+                    0.1 if product_cat == "financial_services" else 0.0
+                ),
+                "ChannelId_woe": 0.1 if channel_id == "ChannelId_1" else 0.0,
+                "PricingStrategy": 2,
+                "CountryCode": 256,
+            }
 
-        # Temporal
-        txn_day = txn_date.weekday()
-        txn_month = txn_date.month
-        txn_year = txn_date.year
-        is_weekend = 1 if txn_day >= 5 else 0
+            # Predict via API
+            try:
+                with st.spinner("Analyzing risk via API..."):
+                    response = requests.post(f"{API_URL}/predict", json=txn_payload)
 
-        # Aggregates
-        avg_val = total_val / frequency if frequency > 0 else 0
-        value_range = max_val - min_val
-        value_cv = std_val / avg_val if avg_val > 0 else 0
+                if response.status_code == 200:
+                    result = response.json()
+                    with col_result:
+                        st.subheader("Analysis Result")
+                        prediction_result_card(result)
 
-        input_data = pd.DataFrame(
-            [
-                {
-                    "Amount": amount,
-                    "Value": value,
-                    "transaction_hour": txn_hour,
-                    "transaction_day": txn_day,
-                    "transaction_month": txn_month,
-                    "transaction_year": txn_year,
-                    "is_weekend": is_weekend,
-                    "total_transaction_value": total_val,
-                    "avg_transaction_value": avg_val,
-                    "min_transaction_value": min_val,
-                    "max_transaction_value": max_val,
-                    "std_transaction_value": std_val,
-                    "transaction_count": frequency,
-                    "value_range": value_range,
-                    "value_cv": value_cv,
-                    "Recency": recency,
-                    "Frequency": frequency,
-                    "Monetary": monetary,
-                    # WoE placeholders (assuming 0 for simplicity/new customer)
-                    "ChannelId_woe": 0.1,
-                    "ProductCategory_woe": 0.1,
-                    "ProductId_woe": 0.0,
-                    "ProviderId_woe": 0.0,
-                    "time_period_woe": 0.0,
-                }
-            ]
-        )
+                        st.markdown("### Score Visual")
+                        risk_score_gauge(result["credit_score"])
 
-        # Ensure column order matches training if possible, or model handles it by name
-        # Missing columns will be filled with 0
+                        st.success("Prediction retrieved from live API")
+                else:
+                    st.error(f"API Error: {response.text}")
 
-        # Predict
-        try:
-            # Add missing columns with 0 if necessary
-            if hasattr(model, "feature_names_in_"):
-                missing_cols = set(model.feature_names_in_) - set(input_data.columns)
-                for c in missing_cols:
-                    input_data[c] = 0
-                input_data = input_data[model.feature_names_in_]
-
-            prob = model.predict_proba(input_data)[0][1]
-            score = int(850 - (prob * 550))
-            category = "high" if prob > 0.5 else "low"
-
-            with col_result:
-                st.subheader("Analysis Result")
-                prediction_result_card(
-                    {
-                        "risk_probability": prob,
-                        "credit_score": score,
-                        "risk_category": category,
-                    }
-                )
-
-                st.markdown("### Score Visual")
-                risk_score_gauge(score)
-
-        except Exception as e:
-            st.error(f"Prediction failed: {e}")
-            st.warning("Ensure all features match the trained model's expectations.")
+            except Exception as e:
+                st.error(f"Failed to connect to API: {e}")
 
 
 def render_batch_analysis(model):

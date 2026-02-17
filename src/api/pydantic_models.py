@@ -56,6 +56,27 @@ class TransactionInput(BaseModel):
     Frequency: int = Field(..., gt=0, description="Transaction frequency")
     Monetary: float = Field(..., description="Total monetary value")
 
+    # Advanced / Statistical Features
+    std_transaction_value: Optional[float] = Field(
+        0.0, description="Std dev of transaction values"
+    )
+    min_transaction_value: Optional[float] = Field(
+        None, description="Min transaction value"
+    )
+    max_transaction_value: Optional[float] = Field(
+        None, description="Max transaction value"
+    )
+    ProductCategory_woe: Optional[float] = Field(
+        0.0, description="WoE for product category"
+    )
+    ChannelId_woe: Optional[float] = Field(0.0, description="WoE for channel id")
+    PricingStrategy: Optional[int] = Field(
+        2, description="Pricing strategy (default 2)"
+    )
+    CountryCode: Optional[int] = Field(
+        256, description="Country code (default 256 for UGX)"
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
