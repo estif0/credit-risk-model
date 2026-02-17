@@ -8,8 +8,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
 [![MLflow](https://img.shields.io/badge/MLflow-2.0+-0194E2.svg)](https://mlflow.org/)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/tests-98%20passed-success.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-134%20passed-success.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-100%25%20API-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 [Quick Start](#-quick-start) • [API](#-api-endpoints) • [Testing](#-testing) • [Docker](#-docker)
@@ -88,7 +88,10 @@ streamlit run src/dashboard/app.py
 
 ```bash
 docker-compose up --build
-# API: http://localhost:8000
+
+# Services:
+# API: http://localhost:9000/docs
+# Dashboard: http://localhost:8501
 # MLflow: http://localhost:5000
 # Jupyter: http://localhost:8888
 ```
@@ -208,7 +211,8 @@ pytest tests/test_api.py -v
 ## 🐳 Docker
 
 **Services:**
-- `api` (8000) - FastAPI application
+- `api` (9000) - FastAPI application
+- `dashboard` (8501) - Streamlit interactive UI
 - `mlflow` (5000) - MLflow tracking UI
 - `notebook` (8888) - Jupyter notebook
 - `data-processor` - Feature engineering

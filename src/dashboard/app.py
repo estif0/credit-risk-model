@@ -91,8 +91,10 @@ def load_model():
 
 
 import requests
+import os
 
-API_URL = f"http://{config.api.host}:{config.api.port}"
+# Use environment variable if set (for Docker), otherwise fallback to config
+API_URL = os.getenv("API_URL", f"http://{config.api.host}:{config.api.port}")
 
 
 @st.cache_data(ttl=60)

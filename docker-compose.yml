@@ -68,14 +68,14 @@ services:
         networks:
             - credit-risk-network
 
-    # API service (placeholder for future FastAPI deployment)
+    # API service
     api:
         build:
             context: .
             dockerfile: Dockerfile
         container_name: credit-risk-api
         ports:
-            - "8000:8000"
+            - "9000:9000"
         volumes:
             - ./data:/app/data
             - ./mlruns:/app/mlruns
@@ -83,9 +83,30 @@ services:
         environment:
             - PYTHONPATH=/app
             - MLFLOW_TRACKING_URI=http://mlflow:5000
-        command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+        command: uvicorn src.api.main:app --host 0.0.0.0 --port 9000 --reload
         depends_on:
             - mlflow
+        networks:
+            - credit-risk-network
+
+    # Dashboard service
+    dashboard:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: credit-risk-dashboard
+        ports:
+            - "8501:8501"
+        volumes:
+            - ./data:/app/data
+            - ./mlruns:/app/mlruns
+            - ./src:/app/src
+        environment:
+            - PYTHONPATH=/app
+            - API_URL=http://api:9000
+        command: streamlit run src/dashboard/app.py --server.address 0.0.0.0
+        depends_on:
+            - api
         networks:
             - credit-risk-network
 
